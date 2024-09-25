@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload de Excel</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f9f9f9;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+        }
+        button, input[type="button"] {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Upload de Arquivo</h1>
+    <input type="file" id="input-excel" accept=".xlsx, .xls" />
+    <a href="divergencia.html"><input type="button" id="btn" value="Mostrar Divergências"></a>
+
+    <div id="divergenciasList" style="display:none; margin-top: 20px;">
+        <h2>Divergências</h2>
+        <ul id="listaDivergencias"></ul>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+    document.getElementById('input-excel').addEventListener('change', handleFile, false);
+
+    function handleFile(event) {
+        const file = event.target.files[0];
+        if (!file) {
+            alert('Nenhum arquivo selecionado.');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+                localStorage.setItem('excelData', JSON.stringify(jsonData));
+                alert('Upload concluído com sucesso.');
+            } catch (error) {
+                console.error('Erro ao processar arquivo:', error);
+                alert('Erro ao processar arquivo.');
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    }
+</script>
+
+</body>
+</html>

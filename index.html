@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rede Auxiliar</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@700&display=swap');
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding-top: 40px;
+        }
+        .container {
+            width: 100%;
+            max-width: 1800px;
+            background: white;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(134, 15, 15, 0.1);
+            border-radius: 8px;
+            text-align: center;
+        }
+        .logo {
+            font-family: 'Poppins', sans-serif;
+            font-size: 48px;
+            font-weight: bold;
+            color: #031a33;
+            margin-bottom: 20px;
+        }
+        .highlight {
+            color: #4285F4;
+        }
+        .top-bar {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 60px;
+            position: relative;
+        }
+        .search-container {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 400px;
+        }
+        #search {
+            width: 100%;
+            padding: 15px 20px;
+            border: 1px solid #ddd;
+            border-radius: 24px;
+            font-size: 16px;
+            transition: box-shadow 0.3s;
+            box-sizing: border-box;
+        }
+        #search:focus {
+            box-shadow: 0 1px 6px rgba(32, 33, 36, 0.28);
+            outline: none;
+        }
+        .clear-icon {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #757575;
+            cursor: pointer;
+            display: none;
+        }
+        .table-wrapper {
+            height: 700px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+            font-size: 12px;
+        }
+        th {
+            background-color: #031a33;
+            color: white;
+            position: sticky;
+            top: 0;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        tr:hover {
+            background-color: #ddd;
+        }
+        #divergenciaBtn {
+            position: absolute;
+            right: 20px;
+            padding: 15px 20px;
+            background-color: #031a33;
+            color: white;
+            border: none;
+            border-radius: 24px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        #divergenciaModal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            z-index: 1000;
+            width: 90%;
+            max-width: 400px;
+        }
+        #modalOverlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 500;
+        }
+        #id, #divergencia {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        #divergencia {
+            height: 100px;
+            resize: none;
+        }
+        button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            background-color: #031a33;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            Rede <span class="highlight">Auxiliar</span>
+        </div>
+        <div class="top-bar">
+            <div class="search-container">
+                <input type="text" id="search" placeholder="Pesquisar...">
+                <span class="clear-icon" onclick="clearSearch()">✖</span>
+            </div>
+            <button id="divergenciaBtn">Divergência</button>
+        </div>
+        <div class="table-wrapper">
+            <table id="dataTable">
+                <!-- Tabela será gerada aqui -->
+            </table>
+        </div>
+    </div>
+    <div id="modalOverlay"></div>
+    <div id="divergenciaModal">
+        <input type="text" id="id" placeholder="ID">
+        <textarea id="divergencia" placeholder="Divergência"></textarea>
+        <button onclick="addDivergencia()">Adicionar Divergência</button>
+        <button onclick="closeModal()">Fechar</button>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            fetch('https://cors-anywhere.herokuapp.com/https://portaldoconhecimento.pdcassim.com.br/admin/assets/plugins/ckeditor/responsive_filemanager/source/Rede%20Auxiliar/Rede%20Auxiliar/tste.xlsx')
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.arrayBuffer();
+            })
+            .then(data => {
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                createTable(jsonData);
+            })
+            .catch(error => console.error('Error fetching the Excel file:', error));
+
+            const searchInput = document.getElementById('search');
+            searchInput.addEventListener('input', filterTable);
+            searchInput.addEventListener('input', toggleClearIcon);
+            searchInput.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape') {
+                    clearSearch();
+                }
+            });
+
+            document.getElementById('divergenciaBtn').addEventListener('click', openModal);
+        });
+
+        function createTable(data) {
+            const table = document.getElementById('dataTable');
+            table.innerHTML = '';
+
+            const headerRow = document.createElement('tr');
+            data[0].forEach(headerText => {
+                const th = document.createElement('th');
+                th.textContent = headerText;
+                headerRow.appendChild(th);
+            });
+            table.appendChild(headerRow);
+
+            data.slice(1).forEach(rowData => {
+                const row = document.createElement('tr');
+                rowData.forEach(cellData => {
+                    const td = document.createElement('td');
+                    td.textContent = cellData || '';
+                    td.style.border = '1px solid #ddd';
+                    row.appendChild(td);
+                });
+                table.appendChild(row);
+            });
+        }
+
+        function filterTable() {
+            const searchTerm = document.getElementById('search').value.toLowerCase();
+            const rows = document.querySelectorAll('#dataTable tr:not(:first-child)');
+            rows.forEach(row => {
+                const cells = Array.from(row.cells);
+                const matches = cells.some(cell => cell.textContent.toLowerCase().includes(searchTerm));
+                row.style.display = matches ? '' : 'none';
+            });
+        }
+
+        function toggleClearIcon() {
+            const clearIcon = document.querySelector('.clear-icon');
+            const searchValue = document.getElementById('search').value;
+            clearIcon.style.display = searchValue ? 'block' : 'none';
+        }
+
+        function clearSearch() {
+            const searchInput = document.getElementById('search');
+            searchInput.value = '';
+            filterTable();
+            toggleClearIcon();
+        }
+
+        function openModal() {
+            document.getElementById('modalOverlay').style.display = 'block';
+            document.getElementById('divergenciaModal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('modalOverlay').style.display = 'none';
+            document.getElementById('divergenciaModal').style.display = 'none';
+        }
+
+        function addDivergencia() {
+            const id = document.getElementById('id').value.trim();
+            const divergencia = document.getElementById('divergencia').value.trim();
+            const date = new Date().toLocaleString();
+            if (id && divergencia) {
+                const entry = { id, divergencia, date };
+                saveDivergencia(entry);
+            }
+            document.getElementById('id').value = '';
+            document.getElementById('divergencia').value = '';
+            closeModal();
+        }
+
+        function saveDivergencia(entry) {
+            let divergencias = JSON.parse(localStorage.getItem('divergencias')) || [];
+            divergencias.push(entry);
+            localStorage.setItem('divergencias', JSON.stringify(divergencias));
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatório de Divergências</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f9f9f9;
+            margin: 0;
+        }
+        .container {
+            width: 90%;
+            max-width: 800px;
+            background: white;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            text-align: center;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            background: #f2f2f2;
+            padding: 10px;
+            margin-bottom: 5px;
+            border-radius: 5px;
+            text-align: left;
+            position: relative;
+        }
+        .delete-btn {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            background: #ff4d4d;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            padding: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Relatório de Divergências</h1>
+    <ul id="divergenciasList">
+        <!-- Divergências serão carregadas aqui -->
+    </ul>
+
+</div>
+
+<a href="Upload.html"><input type="button" id="btn" value="Voltar"></a>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const savedDivergencias = localStorage.getItem('divergencias');
+        const divergenciasList = document.getElementById('divergenciasList');
+        
+        if (savedDivergencias) {
+            const divergencias = JSON.parse(savedDivergencias);
+            divergencias.forEach((entry, index) => {
+                const li = document.createElement('li');
+                li.textContent = `ID: ${entry.id}, Divergência: ${entry.divergencia}, Data: ${entry.date}`;
+                
+                const deleteBtn = document.createElement('button');
+                deleteBtn.textContent = 'X';
+                deleteBtn.className = 'delete-btn';
+                deleteBtn.onclick = () => deleteDivergencia(index);
+                
+                li.appendChild(deleteBtn);
+                divergenciasList.appendChild(li);
+            });
+        } else {
+            divergenciasList.innerHTML = '<li>Nenhuma divergência registrada.</li>';
+        }
+    });
+
+    function deleteDivergencia(index) {
+        let divergencias = JSON.parse(localStorage.getItem('divergencias')) || [];
+        divergencias.splice(index, 1);
+        localStorage.setItem('divergencias', JSON.stringify(divergencias));
+        location.reload(); // Refresh the page to update the list
+    }
+</script>
+
+</body>
+</html>
